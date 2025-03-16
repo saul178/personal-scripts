@@ -3,7 +3,7 @@ import subprocess
 import sys
 
 WARNIN_MSG = """\nWARNING: This option will grab the cookies from your browser if it's supported!
-Using cookies may result in a temporary ban from sites like YouTube if abused to much!
+Using cookies may result in a temporary ban from sites like YouTube if abused too much!
 You've been warned!!!\n"""
 
 def get_video_url(choice):
