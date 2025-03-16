@@ -6,6 +6,7 @@ WARNING_MSG = """\nWARNING: This option will grab the cookies from your browser 
 Using cookies may result in a temporary ban from sites like YouTube if abused too much!
 You've been warned!!!\n"""
 
+
 def get_video_url(choice):
     while True:
         if choice == "1":
@@ -18,6 +19,7 @@ def get_video_url(choice):
         else:
             print("ERROR: URL cannot be empty! Enter a valid URL!")
 
+
 def grab_supported_browser():
     supported_browsers = [
         "brave",
@@ -29,7 +31,9 @@ def grab_supported_browser():
         "vivaldi",
         "whale",
     ]
-    display_supported_browsers = "Supported browsers are: "+", ".join(supported_browsers)
+    display_supported_browsers = "Supported browsers are: " + ", ".join(
+        supported_browsers
+    )
 
     while True:
         print(display_supported_browsers)
@@ -42,7 +46,9 @@ def grab_supported_browser():
             print(display_supported_browsers)
             retry = input("\nDo you want to retry? (y/n): ").strip().lower()
             if retry not in ["y", "yes"]:
-                print("\nExiting script... A supported browser is requied for paid content downloads\n ")
+                print(
+                    "\nExiting script... A supported browser is requied for paid content downloads\n "
+                )
                 sys.exit(1)
 
 
@@ -55,6 +61,7 @@ def yt_dlp_command():
         "mp4",
     ]
     return base_command
+
 
 def download_video(url, is_playlist=False):
     base_command = yt_dlp_command()
@@ -80,7 +87,7 @@ def download_paid_video(browser, url, is_playlist=False, is_paid_content=False):
     if browser != "brave" and is_paid_content:
         base_command.extend(["--cookies-from-browser", browser])
     else:
-        base_command.extend(["--cookies-from-browser", browser+"+gnomekeyring"])
+        base_command.extend(["--cookies-from-browser", browser + "+gnomekeyring"])
 
     if is_playlist:
         output_format = "%(playlist_index)s - %(title)s.%(ext)s"
@@ -93,6 +100,7 @@ def download_paid_video(browser, url, is_playlist=False, is_paid_content=False):
     print(base_command)
     subprocess.run(base_command)
 
+
 def get_valid_input(prompt, valid_options):
     while True:
         user_input = input(prompt).strip().lower()
@@ -101,11 +109,12 @@ def get_valid_input(prompt, valid_options):
         else:
             print("ERROR: invalid input try again or exit the script!")
 
+
 def prompt():
     try:
         while True:
             print(
-            """
+                """
             What video are we downloading?
                 Enter [1] for a single video
                 Enter [2] for a playlist
@@ -117,13 +126,17 @@ def prompt():
                 print("Exiting script, good bye!")
                 break
 
-            is_paid_content = get_valid_input("Is this paid content? (y/n): ", ["y", "yes", "n", "no"])
+            is_paid_content = get_valid_input(
+                "Is this paid content? (y/n): ", ["y", "yes", "n", "no"]
+            )
 
             if is_paid_content == "y" or is_paid_content == "yes":
                 print(WARNING_MSG)
                 browser = grab_supported_browser()
                 url = get_video_url(choice)
-                download_paid_video(browser, url, is_playlist=(choice == "2"), is_paid_content=True)
+                download_paid_video(
+                    browser, url, is_playlist=(choice == "2"), is_paid_content=True
+                )
                 break
             else:
                 url = get_video_url(choice)
@@ -135,8 +148,10 @@ def prompt():
     finally:
         print("Script finished.")
 
+
 def main():
     prompt()
+
 
 if __name__ == "__main__":
     main()
