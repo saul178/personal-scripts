@@ -1,15 +1,22 @@
+#!/usr/bin/env python3
 import subprocess
-import browser_cookie3 as bc
-import tempfile
-from urllib.parse import urlparse
+import sys
 
+WARNIN_MSG = """\nWARNING: This option will grab the cookies from your browser if it's supported!
+Using cookies may result in a temporary ban from sites like YouTube if abused to much!
+You've been warned!!!\n"""
 
 def get_video_url(choice):
-    if choice == "1":
-        return input("Enter the url for the video: ").strip()
-    else:
-        return input("Enter the url for the playlist: ").strip()
+    while True:
+        if choice == "1":
+            url = input("Enter the url for the video: ").strip()
+        else:
+            url = input("Enter the url for the playlist: ").strip()
 
+        if url:
+            return url
+        else:
+            print("ERROR: URL cannot be empty! Enter a valid URL!")
 
 def grab_supported_browser():
     supported_browsers = [
@@ -22,88 +29,24 @@ def grab_supported_browser():
         "vivaldi",
         "whale",
     ]
-    print("Supported browsers are: ", ", ".join(supported_browsers))
+    display_supported_browsers = "Supported browsers are: "+", ".join(supported_browsers)
 
-    get_browser = input("Enter your supported browser: ").strip().lower()
-    if get_browser in supported_browsers:
-        return get_browser
-    else:
-        print(
-            """
-            WARNING: the browser you put in is not supported, this script will continue without extracting your browsers cookies! Which means that membership content that you are subribed to will be ignored!"
-            """
-        )
+    while True:
+        print(display_supported_browsers)
+        get_browser = input("Enter your supported browser: ").strip().lower()
 
-
-def get_domain(url):
-    try:
-        parsed_url = urlparse(url)
-        domain = parsed_url.netloc
-        return domain
-    except Exception as e:
-        print(f"ERROR: failed to extract domain from URL: {e}")
-        return None
+        if get_browser in supported_browsers:
+            return get_browser
+        else:
+            print("\nERROR: The browser you entered is not supported.")
+            print(display_supported_browsers)
+            retry = input("\nDo you want to retry? (y/n): ").strip().lower()
+            if retry not in ["y", "yes"]:
+                print("\nExiting script... A supported browser is requied for paid content downloads\n ")
+                sys.exit(1)
 
 
-# this function can be refactored
-def get_cookies(browser, domain):
-    try:
-        match browser.lower().strip():
-            case "chrome":
-                cookies = bc.chrome()
-            case "brave":
-                print("found brave!!")
-                cookies = bc.brave()
-            case "edge":
-                cookies = bc.edge()
-            case "firefox":
-                cookies = bc.firefox()
-            case "operagx":
-                cookies = bc.opera_gx()
-            case "vivaldi":
-                cookies = bc.vivaldi()
-            case "safari":
-                cookies = bc.safari()
-            case "w3m":
-                cookies = bc.w3m()
-            case "lynx":
-                cookies = bc.lynx()
-            case "opera":
-                cookies = bc.opera()
-            case "librewolf":
-                cookies = bc.librewolf()
-            case _:
-                print("Unsupported browser, defaulting to no authentication!")
-                return None
-
-        cookie_str = ""
-        normailized_domain = domain.lstrip("www.")
-        cookie_file = tempfile.NamedTemporaryFile(
-            delete=True,
-            mode="w",
-            newline="",
-            dir="./",
-            prefix="cookies_",
-            suffix=".txt",
-        )
-        cookie_file_path = cookie_file.name
-
-        for cookie in cookies:
-            cookie_domain = cookie.domain.lstrip("www.")
-            if normailized_domain in cookie_domain:
-                cookie_str += f"{cookie.name}={cookie.value}"
-
-        cookie_file.write(cookie_str)
-        cookie_file.close()
-
-        return cookie_file_path
-
-    except Exception as e:
-        print(f"ERROR: failed to extract cookies {e}")
-        return None
-
-
-def download_video(url, browser, cookies, is_playlist=False):
+def yt_dlp_command():
     base_command = [
         "yt-dlp",
         "-f",
@@ -111,9 +54,10 @@ def download_video(url, browser, cookies, is_playlist=False):
         "--merge-output-format",
         "mp4",
     ]
+    return base_command
 
-    if browser and cookies:
-        base_command.extend(["--cookies", cookies])
+def download_video(url, is_playlist=False):
+    base_command = yt_dlp_command()
 
     if is_playlist:
         output_format = "%(playlist_index)s - %(title)s.%(ext)s"
@@ -127,38 +71,72 @@ def download_video(url, browser, cookies, is_playlist=False):
     subprocess.run(base_command)
 
 
-def main():
-    print(
-        """
-    What video are we downloading?
-    Enter [1] for a single video
-    Enter [2] for a playlist
-    Enter [3] to exit
-    """
-    )
+def download_paid_video(browser, url, is_playlist=False, is_paid_content=False):
+    base_command = yt_dlp_command()
 
+    # brave browser is weird on linux, requires gnomekeyring to grab cookies from the browser.
+    # set warning that by using cookies you may end up ip banned for a bit.
+    # so far edge and chrome just work, brave is the weird one here even though it's chromium based.
+    if browser != "brave" and is_paid_content:
+        base_command.extend(["--cookies-from-browser", browser])
+    else:
+        base_command.extend(["--cookies-from-browser", browser+"+gnomekeyring"])
+
+    if is_playlist:
+        output_format = "%(playlist_index)s - %(title)s.%(ext)s"
+    else:
+        output_format = "%(title)s.%(ext)s"
+
+    base_command.extend(["-o", output_format])
+    base_command.append(url)
+
+    print(base_command)
+    subprocess.run(base_command)
+
+def get_valid_input(prompt, valid_options):
     while True:
-        choice = input("Enter: ").strip()
-        if choice == "1":
-            url = get_video_url(choice)
-            browser = grab_supported_browser()
-            domain = get_domain(url)
-            cookies = get_cookies(browser, domain)
-            download_video(url, browser, cookies, is_playlist=False)
-            break
-        elif choice == "2":
-            url = get_video_url(choice)
-            browser = grab_supported_browser()
-            domain = get_domain(url)
-            cookies = get_cookies(browser, domain)
-            download_video(url, browser, cookies, is_playlist=True)
-            break
-        elif choice == "3":
-            print("exiting script, good bye!")
-            break
+        user_input = input(prompt).strip().lower()
+        if user_input in valid_options:
+            return user_input
         else:
             print("ERROR: invalid input try again or exit the script!")
 
+def prompt():
+    try:
+        while True:
+            print(
+            """
+            What video are we downloading?
+                Enter [1] for a single video
+                Enter [2] for a playlist
+                Enter [3] to exit
+            """
+            )
+            choice = get_valid_input("Enter: ", ["1", "2", "3"])
+            if choice == "3":
+                print("Exiting script, good bye!")
+                break
+
+            is_paid_content = get_valid_input("Is this paid content? (y/n): ", ["y", "yes", "n", "no"])
+
+            if is_paid_content == "y" or is_paid_content == "yes":
+                print(WARNIN_MSG)
+                browser = grab_supported_browser()
+                url = get_video_url(choice)
+                download_paid_video(browser, url, is_playlist=(choice == "2"), is_paid_content=True)
+                break
+            else:
+                url = get_video_url(choice)
+                download_video(url, is_playlist=(choice == "2"))
+                break
+    except KeyboardInterrupt:
+        print("\nCanceled script... \nExiting...")
+        sys.exit(0)
+    finally:
+        print("Script finished.")
+
+def main():
+    prompt()
 
 if __name__ == "__main__":
     main()

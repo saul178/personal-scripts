@@ -1,2 +1,41 @@
-*.txt
+# Ignore video and audio files
 *.mp4
+*.mkv
+*.avi
+*.webm
+*.mov
+*.flv
+*.wmv
+*.mp3
+*.aac
+*.flac
+*.m4a
+*.ogg
+*.opus
+
+# Ignore subtitles
+*.srt
+*.sub
+*.vtt
+*.txt
+
+# Ignore image files often associated with video thumbnails
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.webp
+
+# Ignore temporary files created by video downloaders or editors
+yt-dlp-log.txt
+*.part
+*.crdownload
+*.download
+
+# Ignore archive files that might contain media
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.rar
