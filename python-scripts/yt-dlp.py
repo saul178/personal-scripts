@@ -2,7 +2,7 @@
 import subprocess
 import sys
 
-WARNIN_MSG = """\nWARNING: This option will grab the cookies from your browser if it's supported!
+WARNING_MSG = """\nWARNING: This option will grab the cookies from your browser if it's supported!
 Using cookies may result in a temporary ban from sites like YouTube if abused too much!
 You've been warned!!!\n"""
 
@@ -120,7 +120,7 @@ def prompt():
             is_paid_content = get_valid_input("Is this paid content? (y/n): ", ["y", "yes", "n", "no"])
 
             if is_paid_content == "y" or is_paid_content == "yes":
-                print(WARNIN_MSG)
+                print(WARNING_MSG)
                 browser = grab_supported_browser()
                 url = get_video_url(choice)
                 download_paid_video(browser, url, is_playlist=(choice == "2"), is_paid_content=True)
